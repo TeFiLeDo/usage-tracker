@@ -1,0 +1,15 @@
+[package]
+authors = ["Adrian Wannenmacher <tfld@tfld.dev>"]
+description = "A simple usage tracker in rust."
+edition = "2018"
+homepage = "https://github.com/TeFiLeDo/usage-tracker"
+license = "MIT"
+name = "usage-tracker"
+readme = "README.md"
+repository = "https://github.com/TeFiLeDo/usage-tracker"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+human-panic = "1.0.3"
