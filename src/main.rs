@@ -1,7 +1,7 @@
 /// Information on the usage of things.
 mod usage_information;
 
-use chrono::{naive::NaiveDate, ParseError, TimeZone, Utc};
+use chrono::{naive::NaiveDate, Duration, ParseError, TimeZone, Utc};
 use standard_paths::{LocationType, StandardPaths};
 use std::{
     collections::{btree_map::Entry::Occupied, BTreeMap},
@@ -25,7 +25,7 @@ fn parse_date(src: &str) -> Result<chrono::Date<chrono::Utc>, ParseError> {
 }
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
+#[structopt(author, about)]
 /// The cli.
 struct Opt {
     #[structopt(subcommand)]
@@ -47,29 +47,48 @@ enum Commands {
         ///The name of the new thing.
         name: String,
     },
+
     /// Remove all exiting things.
     Clear,
+
     /// List all existing things.
     List,
+
+    /// Predicts the number of usages of a thing within a time frame.
+    Need {
+        /// The name of the thing.
+        name: String,
+
+        /// The duration to consider.
+        duration: i64,
+
+        /// The type of duration to consider (year, Month, day, hour, minute, second, week => first letter).
+        duration_type: char,
+    },
+
     /// Remove usages from a thing
     Prune {
         /// The name of the thing to prune
         name: String,
+
         #[structopt(short, long, parse(try_from_str = parse_date) )]
         /// A date in the format of dd.MM.yyyy or yyyy-MM-dd. All usages before that date are
         /// pruned. Always treated local time.
         before: Option<chrono::Date<chrono::Utc>>,
     },
+
     /// Remove a thing from the tracker.
     Remove {
         /// The name of the thing to remove.
         name: String,
     },
+
     /// Add a new usage record to a thing.
     Use {
         /// The name of the thing to use.
         name: String,
     },
+
     /// List all usages for a thing.
     Usages {
         /// The name of the thing to use.
@@ -137,6 +156,43 @@ fn main() {
                         println!("   used at: {}", u.with_timezone(&chrono::Local));
                     }
                 }
+            }
+        }
+        Commands::Need {
+            name,
+            duration,
+            duration_type,
+        } => {
+            let duration = match duration_type {
+                'y' => Duration::days(duration * 365),
+                'M' => Duration::days(duration * 30),
+                'd' => Duration::days(duration),
+                'h' => Duration::hours(duration),
+                'm' => Duration::minutes(duration),
+                's' => Duration::seconds(duration),
+                'w' => Duration::weeks(duration),
+                _ => {
+                    eprintln!("\"{}\" is not a valid duration type.", duration_type);
+                    eprintln!(
+                        "See \"{} need --help\" for a list of valid types.",
+                        env!("CARGO_PKG_NAME")
+                    );
+                    exit(exitcode::DATAERR);
+                }
+            };
+
+            if let Occupied(e) = things.entry(name.clone()) {
+                let e = e.get();
+                if e.is_empty() {
+                    println!("0");
+                } else {
+                    let time_passed = Utc::now() - e.get_usages()[0];
+                    let f = duration.num_seconds() as f64 / time_passed.num_seconds() as f64;
+                    println!("{}", e.get_usages().len() as f64 * f);
+                }
+            } else {
+                eprintln!("No thing named \"{}\" exists.", name);
+                exit(exitcode::DATAERR);
             }
         }
         Commands::Prune { name, before } => {
