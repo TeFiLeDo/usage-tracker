@@ -1,7 +1,11 @@
 /// Information on the usage of things.
 mod usage_information;
 
-use std::{fs, path::Path};
+use standard_paths::{LocationType, StandardPaths};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use structopt::StructOpt;
 use usage_information::UsageInformation;
 
@@ -32,9 +36,20 @@ fn main() {
     let cfg = Opt::from_args();
 
     // setup paths
-    let path = "/tmp/test.json";
-    let path_bak = format!("{}.bak", path);
-    let path = Path::new(path);
+    let sp = StandardPaths::new();
+    let path_base = sp
+        .writable_location(LocationType::AppDataLocation)
+        .expect("No standard path found");
+    if !path_base.exists() {
+        fs::create_dir_all(&path_base).expect("Unable to create data directory");
+    }
+    let mut path = PathBuf::new();
+    path.push(&path_base);
+    path.push("default.json");
+    let mut path_bak = PathBuf::new();
+    path_bak.push(&path);
+    path_bak.push(".bak");
+    let path = Path::new(&path);
     let path_bak = Path::new(&path_bak);
 
     // setup things variable

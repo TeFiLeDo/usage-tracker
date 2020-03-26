@@ -357,6 +357,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "standard_paths"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60c28e90bfe0a5d047cde6455e49fd8f8cc3fdedd108876f2f3964c404e6a734"
+dependencies = [
+ "users",
+ "winapi",
+]
+
+[[package]]
 name = "strsim"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -481,7 +491,17 @@ dependencies = [
  "human-panic",
  "serde",
  "serde_json",
+ "standard_paths",
  "structopt",
+]
+
+[[package]]
+name = "users"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7d8fb16f17ce0e6a18a25ce39f08edb5fbe9a25f3f346c9dca5e6ffc0485cdf"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
