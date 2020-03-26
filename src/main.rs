@@ -4,6 +4,7 @@ mod usage_information;
 use chrono::{naive::NaiveDate, ParseError, TimeZone, Utc};
 use standard_paths::{LocationType, StandardPaths};
 use std::{
+    collections::{btree_map::Entry::Occupied, BTreeMap},
     fs,
     path::{Path, PathBuf},
     process::exit,
@@ -12,7 +13,7 @@ use structopt::StructOpt;
 use usage_information::UsageInformation;
 
 /// A hashmap of named things whose usage can be tracked.
-type Things = std::collections::BTreeMap<String, UsageInformation>;
+type Things = BTreeMap<String, UsageInformation>;
 
 fn parse_date(src: &str) -> Result<chrono::Date<chrono::Utc>, ParseError> {
     let t = NaiveDate::parse_from_str(src, "%d.%m.%Y");
@@ -46,7 +47,7 @@ enum Commands {
         ///The name of the new thing.
         name: String,
     },
-    /// Removes all exiting things.
+    /// Remove all exiting things.
     Clear,
     /// List all existing things.
     List,
@@ -66,6 +67,11 @@ enum Commands {
     },
     /// Add a new usage record to a thing.
     Use {
+        /// The name of the thing to use.
+        name: String,
+    },
+    /// List all usages for a thing.
+    Usages {
         /// The name of the thing to use.
         name: String,
     },
@@ -134,8 +140,7 @@ fn main() {
             }
         }
         Commands::Prune { name, before } => {
-            if let std::collections::btree_map::Entry::Occupied(mut e) = things.entry(name.clone())
-            {
+            if let Occupied(mut e) = things.entry(name.clone()) {
                 let t = e.get_mut();
                 if t.is_empty() {
                     println!(" \"{}\" is already empty. Ignoring command.", name);
@@ -166,6 +171,20 @@ fn main() {
                 things.entry(name).and_modify(|e| {
                     e.use_now();
                 });
+            } else {
+                eprintln!("No thing named \"{}\" exists.", name);
+                exit(exitcode::DATAERR);
+            }
+        }
+        Commands::Usages { name } => {
+            if let Occupied(e) = things.entry(name.clone()) {
+                for u in e.get().get_usages() {
+                    if cfg.utc {
+                        println!("{}", u);
+                    } else {
+                        println!("{}", u.with_timezone(&chrono::Local));
+                    }
+                }
             } else {
                 eprintln!("No thing named \"{}\" exists.", name);
                 exit(exitcode::DATAERR);
