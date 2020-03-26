@@ -1,6 +1,7 @@
 /// Information on the usage of things.
 mod usage_information;
 
+use chrono::{naive::NaiveDate, ParseError, TimeZone, Utc};
 use standard_paths::{LocationType, StandardPaths};
 use std::{
     fs,
@@ -12,6 +13,15 @@ use usage_information::UsageInformation;
 
 /// A hashmap of named things whose usage can be tracked.
 type Things = std::collections::BTreeMap<String, UsageInformation>;
+
+fn parse_date(src: &str) -> Result<chrono::Date<chrono::Utc>, ParseError> {
+    let t = NaiveDate::parse_from_str(src, "%d.%m.%Y");
+    let t = match t {
+        Ok(u) => u,
+        Err(_) => NaiveDate::parse_from_str(src, "%Y-%m-%d")?,
+    };
+    Ok(Utc.from_local_date(&t).unwrap())
+}
 
 #[derive(Debug, StructOpt)]
 #[structopt(author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -40,6 +50,15 @@ enum Commands {
     Clear,
     /// List all existing things.
     List,
+    /// Remove usages from a thing
+    Prune {
+        /// The name of the thing to prune
+        name: String,
+        #[structopt(short, long, parse(try_from_str = parse_date) )]
+        /// A date in the format of dd.MM.yyyy or yyyy-MM-dd. All usages before that date are
+        /// pruned. Always treated local time.
+        before: Option<chrono::Date<chrono::Utc>>,
+    },
     /// Remove a thing from the tracker.
     Remove {
         /// The name of the thing to remove.
@@ -114,6 +133,25 @@ fn main() {
                 }
             }
         }
+        Commands::Prune { name, before } => {
+            if let std::collections::btree_map::Entry::Occupied(mut e) = things.entry(name.clone())
+            {
+                let t = e.get_mut();
+                if t.is_empty() {
+                    println!(" \"{}\" is already empty. Ignoring command.", name);
+                } else {
+                    change = true;
+                    if let Some(b) = before {
+                        t.clear_before(&b.and_hms(0, 0, 0));
+                    } else {
+                        t.clear();
+                    }
+                }
+            } else {
+                eprintln!("No thing named \"{}\" exists.", name);
+                exit(exitcode::DATAERR);
+            }
+        }
         Commands::Remove { name } => {
             if things.contains_key(&name) {
                 change = true;
@@ -129,7 +167,7 @@ fn main() {
                     e.use_now();
                 });
             } else {
-                eprintln!("No thing named \"{}\" exists. Ignoring command.", name);
+                eprintln!("No thing named \"{}\" exists.", name);
                 exit(exitcode::DATAERR);
             }
         }
