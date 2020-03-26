@@ -16,7 +16,18 @@ type Things = std::collections::BTreeMap<String, UsageInformation>;
 #[derive(Debug, StructOpt)]
 #[structopt(author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
 /// The cli.
-enum Opt {
+struct Opt {
+    #[structopt(subcommand)]
+    /// The subcommands.
+    cmd: Commands,
+    #[structopt(long)]
+    /// Use UTC instead of the local timezone.
+    utc: bool,
+}
+
+#[derive(Debug, StructOpt)]
+/// All possible subcommands.
+enum Commands {
     /// Add a new thing to keep track of.
     Add {
         ///The name of the new thing.
@@ -77,20 +88,24 @@ fn main() {
     let mut change = false;
 
     // do work
-    match cfg {
-        Opt::Add { name } => {
+    match cfg.cmd {
+        Commands::Add { name } => {
             change = true;
             things.insert(name, UsageInformation::new());
         }
-        Opt::List => {
+        Commands::List => {
             for (pos, (name, usage)) in things.iter().enumerate() {
                 println!("{}: {}", pos, name);
                 for u in usage.get_usages() {
-                    println!("   used at: {}", u)
+                    if (cfg.utc) {
+                        println!("   used at: {}", u);
+                    } else {
+                        println!("   used at: {}", u.with_timezone(&chrono::Local));
+                    }
                 }
             }
         }
-        Opt::Remove { name } => {
+        Commands::Remove { name } => {
             if things.contains_key(&name) {
                 change = true;
                 things.remove(&name);
@@ -98,7 +113,7 @@ fn main() {
                 println!("No thing named \"{}\" exists. Ignoring command.", name);
             }
         }
-        Opt::Use { name } => {
+        Commands::Use { name } => {
             if things.contains_key(&name) {
                 change = true;
                 things.entry(name).and_modify(|e| {
