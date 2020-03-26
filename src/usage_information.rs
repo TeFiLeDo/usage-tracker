@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Keeps track of the usages of something.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UsageInformation {
     /// All past usages of something in UTC time.
     usages: Vec<DateTime<Utc>>,
