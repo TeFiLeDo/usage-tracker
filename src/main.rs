@@ -23,6 +23,11 @@ enum Opt {
     },
     /// List all existing things.
     List,
+    /// Remove a thing from the tracker.
+    Remove {
+        /// The name of the thing to remove.
+        name: String,
+    },
 }
 
 fn main() {
@@ -79,6 +84,15 @@ fn main() {
                 }
             }
         }
+        Opt::Remove { name } => match things.get(&name) {
+            Some(_) => {
+                change = true;
+                things.remove(&name);
+            }
+            None => {
+                println!("No thing named \"{}\" exists. Ignoring command.", name);
+            }
+        },
     }
 
     // save data
