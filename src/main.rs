@@ -21,6 +21,9 @@ struct Opt {
     /// The subcommands.
     cmd: Commands,
     #[structopt(long)]
+    /// If a change is made, delete the original file instead of moving it to the backup location.
+    no_backup: bool,
+    #[structopt(long)]
     /// Use UTC instead of the local timezone.
     utc: bool,
 }
@@ -97,7 +100,7 @@ fn main() {
             for (pos, (name, usage)) in things.iter().enumerate() {
                 println!("{}: {}", pos, name);
                 for u in usage.get_usages() {
-                    if (cfg.utc) {
+                    if cfg.utc {
                         println!("   used at: {}", u);
                     } else {
                         println!("   used at: {}", u.with_timezone(&chrono::Local));
@@ -128,12 +131,16 @@ fn main() {
 
     // save data
     if change {
-        if path_bak.exists() {
-            fs::remove_file(&path_bak).expect("Unable to delete old backup");
+        if path_bak.exists() && !cfg.no_backup {
+            fs::remove_file(&path_bak).expect("Unable to delete backup file");
         }
 
         if path.exists() {
-            fs::rename(&path, &path_bak).expect("Unable to move old data to backup location");
+            if cfg.no_backup {
+                fs::remove_file(&path).expect("Unable to delete file");
+            } else {
+                fs::rename(&path, &path_bak).expect("Unable to move old data to backup location");
+            }
         }
 
         fs::write(
