@@ -1,2 +1,60 @@
 # Usage Tracker ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust) ![GitHub](https://img.shields.io/github/license/TeFiLeDo/usage-tracker) ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
 A simple usage tracker in rust.
+
+## What is this?
+This program allows you to keep track on your usage of _things_.
+
+For example, if you want to keep track of how much milk you need, you'd tell the
+program to keep track of milk. Whenever you have emptied a can of milk, you tell
+it to record a new usage. Later you can see a list of all times when you emptied
+a can.
+
+The program can also provide you with an estimate of how much milk you'll need
+for a certain amount of time. Please note that these estimates are only a rough
+guess and get better with the amount of data provided.
+
+## How to use?
+To start tracking a new _thing_:
+```sh
+$ usage-tracker add thing
+```
+
+To get a list of tracked things:
+```sh
+$ usage-tracker list
+```
+
+To record a new usage of _thing_:
+```sh
+$ usage-tracker use thing
+```
+
+To get an estimate on how much instances of _thing_ you need for a given time:
+```sh
+$ usage-tracker need thing 1 y # 1 year
+$ usage-tracker need thing 1 M # 1 month
+$ usage-tracker need thing 1 d # 1 day
+$ usage-tracker need thing 1 h # 1 hour
+$ usage-tracker need thing 1 m # 1 minute
+$ usage-tracker need thing 1 s # 1 second
+$ usage-tracker need thing 1 w # 1 week
+```
+
+To stop tracking a _thing_:
+```sh
+$ usage-tracker remove thing
+```
+
+To stop tracking all things:
+```sh
+$ usage-tracker clear
+```
+
+## How to install?
+_Comming soon…_
+
+## Details
+In the prediction functionality, the existence of leap years is ignored. Also
+all months are treated as 30 days long. This is necessary to keep the interface
+for users simple. Otherwise they would be required to specify when the usage
+starts, which would be a worse user experience.
