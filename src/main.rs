@@ -36,6 +36,8 @@ enum Commands {
         ///The name of the new thing.
         name: String,
     },
+    /// Removes all exiting things.
+    Clear,
     /// List all existing things.
     List,
     /// Remove a thing from the tracker.
@@ -63,7 +65,7 @@ fn main() {
     let cfg = Opt::from_args();
 
     // setup paths
-    let sp = StandardPaths::new();
+    let sp = StandardPaths::new_with_names("usage-tracker", "TeFiLeDo");
     let path_base = sp
         .writable_location(LocationType::AppDataLocation)
         .expect("No standard path found");
@@ -95,6 +97,10 @@ fn main() {
         Commands::Add { name } => {
             change = true;
             things.insert(name, UsageInformation::new());
+        }
+        Commands::Clear => {
+            change = true;
+            things.clear();
         }
         Commands::List => {
             for (pos, (name, usage)) in things.iter().enumerate() {
