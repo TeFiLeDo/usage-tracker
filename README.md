@@ -51,10 +51,25 @@ $ usage-tracker clear
 ```
 
 ## How to install?
-_Comming soon…_
+If you have _cargo_ installed (which probably means your a rust developer), just
+type this:
+```sh
+$ cargo install usage-tracker
+```
+
+Otherwise you can go to the [releases](https://github.com/TeFiLeDo/usage-tracker/releases)
+page and grab the application for your platform from the latest release. Make
+sure to grab the version for the correct platform.
 
 ## Details
 In the prediction functionality, the existence of leap years is ignored. Also
 all months are treated as 30 days long. This is necessary to keep the interface
 for users simple. Otherwise they would be required to specify when the usage
 starts, which would be a worse user experience.
+
+## How to build from source?
+You will need to set up a rust development environment. After that, clone the
+repository. Go into the root folder of the repository and run this:
+```sh
+$ cargo build
+```
