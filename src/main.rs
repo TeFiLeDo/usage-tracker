@@ -5,6 +5,7 @@ use standard_paths::{LocationType, StandardPaths};
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::exit,
 };
 use structopt::StructOpt;
 use usage_information::UsageInformation;
@@ -26,6 +27,11 @@ enum Opt {
     /// Remove a thing from the tracker.
     Remove {
         /// The name of the thing to remove.
+        name: String,
+    },
+    /// Add a new usage record to a thing.
+    Use {
+        /// The name of the thing to use.
         name: String,
     },
 }
@@ -80,19 +86,29 @@ fn main() {
             for (pos, (name, usage)) in things.iter().enumerate() {
                 println!("{}: {}", pos, name);
                 for u in usage.get_usages() {
-                    println!("  used at: {}", u)
+                    println!("   used at: {}", u)
                 }
             }
         }
-        Opt::Remove { name } => match things.get(&name) {
-            Some(_) => {
+        Opt::Remove { name } => {
+            if things.contains_key(&name) {
                 change = true;
                 things.remove(&name);
-            }
-            None => {
+            } else {
                 println!("No thing named \"{}\" exists. Ignoring command.", name);
             }
-        },
+        }
+        Opt::Use { name } => {
+            if things.contains_key(&name) {
+                change = true;
+                things.entry(name).and_modify(|e| {
+                    e.use_now();
+                });
+            } else {
+                eprintln!("No thing named \"{}\" exists. Ignoring command.", name);
+                exit(exitcode::DATAERR);
+            }
+        }
     }
 
     // save data
