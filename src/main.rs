@@ -10,7 +10,7 @@ use structopt::StructOpt;
 use usage_information::UsageInformation;
 
 /// A hashmap of named things whose usage can be tracked.
-type Things = std::collections::HashMap<String, UsageInformation>;
+type Things = std::collections::BTreeMap<String, UsageInformation>;
 
 #[derive(Debug, StructOpt)]
 #[structopt(author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -21,6 +21,8 @@ enum Opt {
         ///The name of the new thing.
         name: String,
     },
+    /// List all existing things.
+    List,
 }
 
 fn main() {
@@ -45,30 +47,42 @@ fn main() {
     }
     let mut path = PathBuf::new();
     path.push(&path_base);
-    path.push("default.json");
+    path.push("default");
+    path.set_extension("ron");
     let mut path_bak = PathBuf::new();
     path_bak.push(&path);
-    path_bak.push(".bak");
+    path_bak.set_extension("ron.bak");
     let path = Path::new(&path);
     let path_bak = Path::new(&path_bak);
 
     // setup things variable
     let mut things: Things = if path.exists() {
-        serde_json::from_slice(fs::read(&path).expect("Unable to read data").as_slice())
+        ron::de::from_bytes(fs::read(&path).expect("Unable to read data").as_slice())
             .expect("Unable to deserialize data")
     } else {
         Things::new()
     };
 
+    let mut change = false;
+
     // do work
     match cfg {
         Opt::Add { name } => {
+            change = true;
             things.insert(name, UsageInformation::new());
+        }
+        Opt::List => {
+            for (pos, (name, usage)) in things.iter().enumerate() {
+                println!("{}: {}", pos, name);
+                for u in usage.get_usages() {
+                    println!("  used at: {}", u)
+                }
+            }
         }
     }
 
     // save data
-    {
+    if change {
         if path_bak.exists() {
             fs::remove_file(&path_bak).expect("Unable to delete old backup");
         }
@@ -79,9 +93,9 @@ fn main() {
 
         fs::write(
             &path,
-            serde_json::to_vec(&things)
+            ron::ser::to_string(&things)
                 .expect("Unable to serialize data")
-                .as_slice(),
+                .as_bytes(),
         )
         .expect("Unable to write data");
     }

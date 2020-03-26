@@ -13,6 +13,10 @@ impl UsageInformation {
         UsageInformation { usages: vec![] }
     }
 
+    pub fn get_usages(&self) -> &Vec<DateTime<Utc>> {
+        &self.usages
+    }
+
     /// Adds a usage at the current time.
     pub fn use_now(&mut self) {
         self.usages.push(Utc::now());
