@@ -1,4 +1,4 @@
-# Usage Tracker [![Crates.io](https://img.shields.io/crates/l/usage-tracker)](https://crates.io/crates/usage-tracker) [![Build Status](https://drone.tfld.dev/api/badges/tfld/Test/status.svg)](https://drone.tfld.dev/tfld/Test)
+# Usage Tracker [![Crates.io](https://img.shields.io/crates/l/usage-tracker)](https://crates.io/crates/usage-tracker) [![Build Status](https://drone.tfld.dev/api/badges/tfld/usage-tracker/status.svg)](https://drone.tfld.dev/tfld/usage-tracker)
 
 A simple usage tracker in rust.
 
