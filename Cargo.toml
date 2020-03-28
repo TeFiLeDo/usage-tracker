@@ -3,13 +3,13 @@ authors = ["Adrian Wannenmacher <tfld@tfld.dev>"]
 categories = ["command-line-utilities"]
 description = "A simple usage tracker in rust."
 edition = "2018"
-homepage = "https://git.tfld.dev/tfld/usage-tracker"
+homepage = "https://github.com/TeFiLeDo/usage-tracker"
 keywords = ["cli", "usage", "tracking", "analysis", "prediction"]
 license = "MIT"
 name = "usage-tracker"
 readme = "README.md"
-repository = "https://git.tfld.dev/tfld/usage-tracker"
-version = "0.1.4"
+repository = "https://github.com/TeFiLeDo/usage-tracker"
+version = "0.1.5"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

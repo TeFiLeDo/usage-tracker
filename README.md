@@ -1,5 +1,4 @@
-# Usage Tracker [![Crates.io](https://img.shields.io/crates/l/usage-tracker)](https://crates.io/crates/usage-tracker) [![Build Status](https://drone.tfld.dev/api/badges/tfld/usage-tracker/status.svg)](https://drone.tfld.dev/tfld/usage-tracker)
-
+# Usage Tracker ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust) ![GitHub](https://img.shields.io/github/license/TeFiLeDo/usage-tracker) ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
 A simple usage tracker in rust.
 
 ## What is this?
@@ -58,7 +57,7 @@ type this:
 $ cargo install usage-tracker
 ```
 
-Otherwise you can go to the [releases](https://git.tfld.dev/tfld/usage-tracker/releases)
+Otherwise you can go to the [releases](https://github.com/TeFiLeDo/usage-tracker/releases)
 page and grab the application for your platform from the latest release. Make
 sure to grab the version for the correct platform.
 
