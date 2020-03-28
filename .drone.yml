@@ -4,7 +4,7 @@ name: Default
 steps:
 - name: Rust build
   image: rust:latest
-  comands:
+  commands:
   - cargo build --release
   - cargo test --release
 - name: Create archive
