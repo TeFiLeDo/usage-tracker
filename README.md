@@ -1,4 +1,5 @@
-# Usage Tracker ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust) ![GitHub](https://img.shields.io/github/license/TeFiLeDo/usage-tracker) ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
+# Usage Tracker [![Crates.io](https://img.shields.io/crates/l/usage-tracker)](https://crates.io/crates/usage-tracker) [![Build Status](https://drone.tfld.dev/api/badges/tfld/Test/status.svg)](https://drone.tfld.dev/tfld/Test)
+
 A simple usage tracker in rust.
 
 ## What is this?

@@ -1,0 +1,26 @@
+kind: pipeline
+name: Default
+
+steps:
+- name: Rust build
+  image: rust:latest
+  comands:
+  - cargo build --release
+  - cargo test --release
+- name: Create archive
+  image: alpine:latest
+  commands:
+  - mkdir archive
+  - cp target/release/test archive
+  - cd archive
+  - tar -czvf ../usage-tracker-${DRONE_TAG}-linux.tar.gz
+- name: Upload archive
+  image: plugins/gitea-release
+  settings:
+    api_key:
+      from_secret: api-key
+    base_url: https://git.tfld.dev/
+    files:
+    - usage-tracker-${DRONE_TAG}-linux.tar.gz
+  when:
+    event: tag
