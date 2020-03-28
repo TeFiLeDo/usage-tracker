@@ -4,6 +4,7 @@ on:
   release:
     types: [created]
 
+
 jobs:
   build-linux:
     name: Upload Linux binary
