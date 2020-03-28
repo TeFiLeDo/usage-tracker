@@ -58,7 +58,7 @@ type this:
 $ cargo install usage-tracker
 ```
 
-Otherwise you can go to the [releases](https://github.com/TeFiLeDo/usage-tracker/releases)
+Otherwise you can go to the [releases](https://git.tfld.dev/tfld/usage-tracker/releases)
 page and grab the application for your platform from the latest release. Make
 sure to grab the version for the correct platform.
 
