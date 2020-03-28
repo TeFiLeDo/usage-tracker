@@ -11,9 +11,11 @@ steps:
   image: alpine:latest
   commands:
   - mkdir archive
-  - cp target/release/test archive
+  - cp target/release/usage-tracker archive
   - cd archive
   - tar -czvf ../usage-tracker-${DRONE_TAG}-linux.tar.gz
+  when:
+    event: tag
 - name: Upload archive
   image: plugins/gitea-release
   settings:
