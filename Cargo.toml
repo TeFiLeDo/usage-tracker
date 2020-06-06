@@ -9,15 +9,14 @@ license = "MIT"
 name = "usage-tracker"
 readme = "README.md"
 repository = "https://github.com/TeFiLeDo/usage-tracker"
-version = "0.1.5"
+version = "0.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0"
 chrono = {version = "0.4", features = ["serde"]}
-exitcode = "1.1"
-human-panic = "1.0"
 serde = {version = "1.0", features = ["derive"]}
-ron = "0.5"
+ron = "0.6"
 standard_paths = "0.4"
-structopt = "0.3"
+thiserror = "1.0"
