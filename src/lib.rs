@@ -14,7 +14,7 @@ pub enum UsageTrackerError {
 }
 
 /// A struct that keeps the records for all tracked objects.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq,PartialEq, Serialize)]
 pub struct UsageInformation {
     usage_information: BTreeMap<String, Usages>,
 }

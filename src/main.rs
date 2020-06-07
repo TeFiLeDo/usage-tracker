@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use standard_paths::{LocationType, StandardPaths};
 use std::{
-    fs::File,
+    fs::{self, File},
     path::{Path, PathBuf},
 };
 use usage_tracker::*;
@@ -10,9 +10,12 @@ const PATH_CONVERT_ERROR: &str =
     "Failed to convert file name for other error message. WTF have you done?!";
 
 fn main() -> Result<()> {
-    let info = load_default_files()?;
+    let init_info = load_from_default_files()?;
+    let info = init_info.clone();
 
-    dbg!(info);
+    if info != init_info {
+        save_to_default_file(&info, true)?;
+    }
 
     Ok(())
 }
@@ -24,7 +27,7 @@ fn main() -> Result<()> {
 /// application data directory:
 /// 1. `usages.json`: this is also the file the program writes to by default.
 /// 2. `default.ron`: this was the default file in 0.1, so 0.2 should be able to fall back to it.
-fn load_default_files() -> Result<UsageInformation> {
+fn load_from_default_files() -> Result<UsageInformation> {
     // get application data directory
     let sp = StandardPaths::new();
     let path_base = sp
@@ -71,4 +74,51 @@ fn load_default_files() -> Result<UsageInformation> {
     }
 
     Ok(UsageInformation::new())
+}
+
+/// Saves the provided UsageInformation to a default file. The default file is the first file listed
+/// in the documentation of `load_from_default_files()`.
+///
+/// The parameter `backup` specifies whether or not the function will create a backup of the
+/// original file (if one exists), before overwriting it. This backup is very simple, it's literally
+/// adding `.bak` to the original files name. If a file with that name already exists, it is
+/// deleted.
+fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
+    // get file path
+    let sp = StandardPaths::new();
+    let mut path = sp
+        .writable_location(LocationType::AppDataLocation)
+        .context("application data directory not found")?;
+    path.push("usages");
+    path.set_extension("json");
+
+    if backup {
+        // get backup path
+        let mut backup_path = PathBuf::new();
+        backup_path.push(&path);
+        backup_path.set_extension("json.bak");
+
+        // make sure backup path is clear
+        if backup_path.exists() {
+            fs::remove_file(&backup_path).context("couldn't clear backup file path")?;
+        }
+
+        // move old file
+        if path.exists() {
+            fs::rename(&path, &backup_path)
+                .context("couldn't move old data file to backup location")?;
+        }
+    }
+
+    // make sure path is clear
+    if path.exists() {
+        fs::remove_file(&path).context("couldn't clear data file path")?;
+    }
+
+    let file = File::create(Path::new(&path)).context(format!(
+        "could not create file: {}",
+        path.to_str().context(PATH_CONVERT_ERROR)?
+    ))?;
+
+    serde_json::to_writer_pretty(file, ui).context("couldn't format data to json")
 }
