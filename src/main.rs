@@ -32,6 +32,13 @@ enum Commands {
         name: String,
     },
 
+    /// List all currently tracked objects.
+    List {
+        /// Print all usage dates in addition to the objects names.
+        #[structopt(long, short)]
+        verbose: bool,
+    },
+
     /// Remove a currently tracked object permanently.
     Remove {
         /// The name of the object to remove.
@@ -44,6 +51,12 @@ enum Commands {
         #[structopt(long)]
         add_if_new: bool,
         /// The name of the object that was used.
+        name: String,
+    },
+
+    /// Show all usages of a single object.
+    Show {
+        /// The name of the object.
         name: String,
     },
 }
@@ -66,9 +79,28 @@ fn main() -> Result<()> {
 
     // handle commands
     match opt.cmd {
-        Commands::Add { name } => info.add(name)?,
-        Commands::Remove { name } => info.remove(name),
-        Commands::Use { add_if_new, name } => info.record_use(name, add_if_new)?,
+        Commands::Add { name } => info.add(&name)?,
+        Commands::List { verbose } => {
+            if !verbose {
+                for (i, k) in info.list().iter().enumerate() {
+                    println!("{}: {}", i, k);
+                }
+            } else {
+                for (i, (k, v)) in info.list_verbose().iter().enumerate() {
+                    println!("{}: {}", i, k);
+                    for u in v.list() {
+                        println!("   used at {}", u.with_timezone(&chrono::Local));
+                    }
+                }
+            }
+        }
+        Commands::Remove { name } => info.remove(&name),
+        Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
+        Commands::Show { name } => {
+            for u in (info.show(&name)?).list() {
+                println!("{}", u.with_timezone(&chrono::Local));
+            }
+        }
     }
 
     // if data changed, safe new data

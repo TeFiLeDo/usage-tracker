@@ -32,13 +32,27 @@ impl UsageInformation {
     ///
     /// # Possible errors
     /// - `UsageTrackerError::ObjectAlreadyTracked`
-    pub fn add(&mut self, name: String) -> Result<(), UsageTrackerError> {
-        if self.usage_information.contains_key(&name) {
-            return Err(UsageTrackerError::ObjectAlreadyTracked { name: name });
+    pub fn add(&mut self, name: &String) -> Result<(), UsageTrackerError> {
+        if self.usage_information.contains_key(name) {
+            return Err(UsageTrackerError::ObjectAlreadyTracked {
+                name: name.to_owned(),
+            });
         }
 
-        self.usage_information.insert(name, Usages::new());
+        self.usage_information
+            .insert(name.to_owned(), Usages::new());
+
         Ok(())
+    }
+
+    /// Provides a vector with all existing keys.
+    pub fn list(&self) -> Vec<&String> {
+        self.usage_information.keys().collect()
+    }
+
+    /// Provides read access to all stored data.
+    pub fn list_verbose(&self) -> &BTreeMap<String, Usages> {
+        &self.usage_information
     }
 
     /// Loads a UsageInformation object from a RON file.
@@ -78,22 +92,38 @@ impl UsageInformation {
     ///
     /// # Possible errors
     /// - `UsageTrackerError::ObjectNotTracked`
-    pub fn record_use(&mut self, name: String, add_if_new: bool) -> Result<(), UsageTrackerError> {
-        if !add_if_new && !self.usage_information.contains_key(&name) {
-            return Err(UsageTrackerError::ObjectNotTracked { name: name });
+    pub fn record_use(&mut self, name: &String, add_if_new: bool) -> Result<(), UsageTrackerError> {
+        if !add_if_new && !self.usage_information.contains_key(name) {
+            return Err(UsageTrackerError::ObjectNotTracked {
+                name: name.to_owned(),
+            });
         }
 
         self.usage_information
-            .entry(name)
+            .entry(name.to_owned())
             .or_insert(Usages::new())
             .record_usage();
         Ok(())
     }
 
     /// Removes a currently tracked object permanently.
-    pub fn remove(&mut self, name: String) {
-        if self.usage_information.contains_key(&name) {
-            self.usage_information.remove(&name);
+    pub fn remove(&mut self, name: &String) {
+        if self.usage_information.contains_key(name) {
+            self.usage_information.remove(name);
         }
+    }
+
+    /// Provides the usages for a specific object.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::ObjectNotTracked`
+    pub fn show(&self, name: &String) -> Result<&Usages, UsageTrackerError> {
+        if !self.usage_information.contains_key(name) {
+            return Err(UsageTrackerError::ObjectNotTracked {
+                name: name.to_owned(),
+            });
+        }
+
+        Ok(&self.usage_information[name])
     }
 }

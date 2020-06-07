@@ -9,11 +9,17 @@ pub struct Usages {
 }
 
 impl Usages {
+    /// Provides read access to all stored data.
+    pub fn list(&self) -> &Vec<DateTime<Utc>> {
+        &self.usages
+    }
+
     /// Creates a new, empty Usages object.
     pub fn new() -> Self {
         Self { usages: Vec::new() }
     }
 
+    /// Records a new usage of an object.
     pub fn record_usage(&mut self) {
         self.usages.push(Utc::now());
     }
