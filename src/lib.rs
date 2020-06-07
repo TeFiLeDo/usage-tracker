@@ -1,67 +1,38 @@
 mod usage_information;
 
-use std::fs;
-use std::path::Path;
 use thiserror::Error;
 pub use usage_information::UsageInformation;
 
+/// All errors the library's public interface can return.
 #[derive(Error, Debug)]
 pub enum UsageTrackerError {
-    #[error("Data file not found: \"{file}\"")]
-    FileNotFound { file: String },
+    /// The loading (most likely parsing) of a JSON file failed. Contains the root cause.
+    #[error("JSON file could not be loaded")]
+    FileLoadErrorJson(#[source] serde_json::Error),
 
-    #[error("Failed to parse \"{file}\" as a RON-file")]
-    FileParseErrorRon {
-        file: String,
-        #[source]
-        source: ron::Error,
-    },
-
-    #[error(transparent)]
-    FileReadError(#[from] std::io::Error),
-
-    #[error("The standard path for application data could not be found.")]
-    PathIsNotDefined {
-        #[source]
-        source: std::io::Error,
-    },
-
-    #[error("The provided path isn't a file: \"{path}\"")]
-    PathIsNotFile { path: String },
+    /// The loading (most likely parsing) of a RON file failed. Contains the root cause.
+    #[error("RON file could not be loaded")]
+    FileLoadErrorRon(#[source] ron::Error),
 }
 
-pub fn load_usage_information_from_default() -> Result<UsageInformation, UsageTrackerError> {
-    let sp = standard_paths::StandardPaths::new_with_names("usage-tracker", "TeFiLeDo");
-    let mut path = sp
-        .writable_location(standard_paths::LocationType::AppDataLocation)
-        .or_else(|e| Err(UsageTrackerError::PathIsNotDefined { source: e }))?;
-
-    path.push("default");
-    path.set_extension("ron");
-
-    load_usage_information_from_ron_file(Path::new(&path))
+/// Loads a UsageInformation object from a JSON file.
+pub fn load_usage_information_from_json_reader<R>(
+    rdr: R,
+) -> Result<UsageInformation, UsageTrackerError>
+where
+    R: std::io::Read,
+{
+    serde_json::from_reader::<_, UsageInformation>(rdr)
+        .or_else(|e| return Err(UsageTrackerError::FileLoadErrorJson(e)))
 }
 
-pub fn load_usage_information_from_ron_file(
-    path: &Path,
-) -> Result<UsageInformation, UsageTrackerError> {
-    if !path.exists() {
-        return Err(UsageTrackerError::FileNotFound {
-            file: path.to_str().unwrap().to_owned(),
-        });
-    } else if !path.is_file() {
-        return Err(UsageTrackerError::PathIsNotFile {
-            path: path.to_str().unwrap().to_owned(),
-        });
-    }
-
-    let file = fs::read(path).or_else(|e| return Err(UsageTrackerError::FileReadError(e)))?;
-    let info: UsageInformation = ron::de::from_bytes(file.as_slice()).or_else(|e| {
-        return Err(UsageTrackerError::FileParseErrorRon {
-            file: path.to_str().unwrap().to_owned(),
-            source: e,
-        });
-    })?;
-
-    Ok(info)
+/// Loads a UsageInformation object from a RON file.
+pub fn load_usage_information_from_ron_file<R>(
+    rdr: R,
+) -> Result<UsageInformation, UsageTrackerError>
+where
+    R: std::io::Read,
+{
+    ron::de::from_reader::<_, UsageInformation>(rdr)
+        .or_else(|e| return Err(UsageTrackerError::FileLoadErrorRon(e)))
 }
