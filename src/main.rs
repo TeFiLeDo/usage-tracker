@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use human_panic::{setup_panic, Metadata};
 use standard_paths::{LocationType, StandardPaths};
 use std::{
     fs::{self, File},
@@ -33,6 +34,14 @@ enum Commands {
 }
 
 fn main() -> Result<()> {
+    // setup panic handler
+    setup_panic!(Metadata {
+        authors: env!("CARGO_PKG_AUTHORS").into(),
+        homepage: env!("CARGO_PKG_HOMEPAGE").into(),
+        name: env!("CARGO_PKG_NAME").into(),
+        version: env!("CARGO_PKG_VERSION").into(),
+    });
+
     // parge arguments
     let opt = Opt::from_args();
 
