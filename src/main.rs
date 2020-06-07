@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
-use human_panic::{setup_panic, Metadata};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use human_panic::setup_panic;
 use standard_paths::{LocationType, StandardPaths};
 use std::{
     fs::{self, File},
@@ -32,11 +33,33 @@ enum Commands {
         name: String,
     },
 
+    /// Remove **all** objects permanently.
+    Clear,
+
     /// List all currently tracked objects.
     List {
         /// Print all usage dates in addition to the objects names.
         #[structopt(long, short)]
         verbose: bool,
+    },
+
+    /// Remove usages from an object.
+    Prune {
+        /// Remove all usages before this point in time. If not specified, all usages are removed.
+        ///
+        /// Can be in one of these formats:
+        ///
+        /// - 'dd.MM.yyyy': if this format is used, the timezone is set as the local timezone.
+        /// - 'yyyy-MM-ddThh:mm:ss': if this format is used, the timezone is set as the local
+        ///                          timezone. Intended for use by other programs, but humans should
+        ///                          be able to use it too.
+        /// - 'yyyy-MM-ddThh:mm:ss+oh:om': this format allows you to specify the timezone yourself.
+        ///                                `oh` is the offset hour value, 'om' the offset minute
+        ///                                value. Intended for use by other programs.
+        #[structopt(short, long, parse(try_from_str = parse_date), verbatim_doc_comment)]
+        before: Option<DateTime<Utc>>,
+        /// The name of the object to modify.
+        name: String,
     },
 
     /// Remove a currently tracked object permanently.
@@ -80,7 +103,12 @@ fn main() -> Result<()> {
     // handle commands
     match opt.cmd {
         Commands::Add { name } => info.add(&name)?,
+        Commands::Clear => info.clear(),
         Commands::List { verbose } => {
+            if info.list_verbose().len() ==  0 {
+                return Err(anyhow!("No objects are currently tracked"));
+            }
+
             if !verbose {
                 for (i, k) in info.list().iter().enumerate() {
                     println!("{}: {}", i, k);
@@ -94,6 +122,7 @@ fn main() -> Result<()> {
                 }
             }
         }
+        Commands::Prune { before, name } => info.prune(&name, &before)?,
         Commands::Remove { name } => info.remove(&name),
         Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
         Commands::Show { name } => {
@@ -165,6 +194,34 @@ fn load_from_default_files() -> Result<UsageInformation> {
     }
 
     Ok(UsageInformation::new())
+}
+
+/// Parses a &str into a DateTime<Utc>.
+///
+/// Tries different formats described by the documentation for the `prune -v` command parameter.
+fn parse_date(src: &str) -> Result<DateTime<Utc>, Box<dyn std::error::Error>> {
+    if src.len() == "dd.MM.yyyy".len() {
+        let d = NaiveDate::parse_from_str(src, "%d.%m.%Y")
+            .context(format!("could not parse local date: {}", src))?;
+        return Ok(Utc
+            .from_local_datetime(
+                &d.and_hms_opt(0, 0, 0)
+                    .ok_or(anyhow!("failed to convert to utc: {}", d))?,
+            )
+            .unwrap());
+    } else if src.len() == "yyyy-MM-ddThh:mm:ss".len() {
+        let dt: NaiveDateTime = src
+            .parse()
+            .context(format!("could not pares local datetime: {}", src))?;
+
+        let dtu = chrono::Local.from_local_datetime(&dt).unwrap();
+
+        return Ok(dtu.into());
+    } else {
+        return Ok(src
+            .parse()
+            .context(format!("could not parse datetime: {}", src))?);
+    }
 }
 
 /// Saves the provided UsageInformation to a default file. The default file is the first file listed

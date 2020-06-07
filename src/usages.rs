@@ -9,6 +9,10 @@ pub struct Usages {
 }
 
 impl Usages {
+    pub fn clear(&mut self) {
+        self.usages.clear();
+    }
+
     /// Provides read access to all stored data.
     pub fn list(&self) -> &Vec<DateTime<Utc>> {
         &self.usages
@@ -17,6 +21,10 @@ impl Usages {
     /// Creates a new, empty Usages object.
     pub fn new() -> Self {
         Self { usages: Vec::new() }
+    }
+
+    pub fn prune(&mut self, before: DateTime<Utc>) {
+        self.usages.retain(|u| u >= &before);
     }
 
     /// Records a new usage of an object.

@@ -1,7 +1,7 @@
 mod usages;
 
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Entry::Occupied, BTreeMap};
 use thiserror::Error;
 use usages::Usages;
 
@@ -45,6 +45,11 @@ impl UsageInformation {
         Ok(())
     }
 
+    /// Removes **all** objects permanently.
+    pub fn clear(&mut self) {
+        self.usage_information.clear();
+    }
+
     /// Provides a vector with all existing keys.
     pub fn list(&self) -> Vec<&String> {
         self.usage_information.keys().collect()
@@ -85,6 +90,35 @@ impl UsageInformation {
     pub fn new() -> Self {
         Self {
             usage_information: BTreeMap::new(),
+        }
+    }
+
+    /// Removes usages from an object.
+    ///
+    /// If `before` is `None`, all usages are removed. Otherwise, only usages before `before` are
+    /// removed.
+    ///
+    /// # Possible errors:
+    /// - `UsageTrackerError::ObjectNotTracked`
+    pub fn prune(
+        &mut self,
+        name: &String,
+        before: &Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<(), UsageTrackerError> {
+        if let Occupied(mut e) = self.usage_information.entry(name.to_owned()) {
+            let usages = e.get_mut();
+
+            if before.is_some() {
+                usages.prune(before.unwrap());
+            } else {
+                usages.clear();
+            }
+
+            return Ok(());
+        } else {
+            return Err(UsageTrackerError::ObjectNotTracked {
+                name: name.to_owned(),
+            });
         }
     }
 
