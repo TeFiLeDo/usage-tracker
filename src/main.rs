@@ -31,6 +31,15 @@ enum Commands {
         /// The name of the new object.
         name: String,
     },
+
+    /// Record a new usage of an object.
+    Use {
+        /// Add the object if it isn't tracked yet.
+        #[structopt(long)]
+        add_if_new: bool,
+        /// The name of the object that was used.
+        name: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -52,6 +61,7 @@ fn main() -> Result<()> {
     // handle commands
     match opt.cmd {
         Commands::Add { name } => info.add(name)?,
+        Commands::Use { add_if_new, name } => info.record_use(name, add_if_new)?,
     }
 
     // if data changed, safe new data

@@ -13,4 +13,8 @@ impl Usages {
     pub fn new() -> Self {
         Self { usages: Vec::new() }
     }
+
+    pub fn record_usage(&mut self) {
+        self.usages.push(Utc::now());
+    }
 }

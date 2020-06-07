@@ -11,9 +11,14 @@ pub enum UsageTrackerError {
     /// The loading (most likely parsing) of a RON file failed. Contains the root cause.
     #[error("RON file could not be loaded")]
     FileLoadErrorRon(#[source] ron::Error),
+
     /// Tried to add a new object to keep track of, but object with same name is already tracked.
     #[error("object \"{name}\" is already tracked")]
     ObjectAlreadyTracked { name: String },
+
+    /// Tried to access an object that is not kept track of.
+    #[error("object \"{name}\" doesn't exist")]
+    ObjectNotTracked { name: String },
 }
 
 /// A struct that keeps the records for all tracked objects.
@@ -23,6 +28,10 @@ pub struct UsageInformation {
 }
 
 impl UsageInformation {
+    /// Add a new object to keep track of.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::ObjectAlreadyTracked`
     pub fn add(&mut self, name: String) -> Result<(), UsageTrackerError> {
         if self.usage_information.contains_key(&name) {
             return Err(UsageTrackerError::ObjectAlreadyTracked { name: name });
@@ -34,11 +43,16 @@ impl UsageInformation {
 
     /// Loads a UsageInformation object from a RON file.
     ///
+    /// # Explanation
     /// With v0.2, the data layout was changed. To make the transition from v0.1 easier for users,
     /// this function was created. It is able to read the RON files produced by v0.1 and convert
     /// them into the data structure of v0.2.
     ///
-    /// **IMPORTANT:** if it still exists by then, v1.0 will see this function removed.
+    /// # Deprecation
+    /// If it still exists by then, v1.0 will see this function removed.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::FileLoadErrorRon`
     #[deprecated(
         since = "0.2",
         note = "please only use this function if you have to load files from v0.1"
@@ -58,5 +72,21 @@ impl UsageInformation {
         Self {
             usage_information: BTreeMap::new(),
         }
+    }
+
+    /// Record a new usage of an object.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::ObjectNotTracked`
+    pub fn record_use(&mut self, name: String, add_if_new: bool) -> Result<(), UsageTrackerError> {
+        if !add_if_new && !self.usage_information.contains_key(&name) {
+            return Err(UsageTrackerError::ObjectNotTracked { name: name });
+        }
+
+        self.usage_information
+            .entry(name)
+            .or_insert(Usages::new())
+            .record_usage();
+        Ok(())
     }
 }
