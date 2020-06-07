@@ -139,7 +139,7 @@ fn main() -> Result<()> {
                 for (i, (k, v)) in info.list_verbose().iter().enumerate() {
                     println!("{}: {}", i, k);
                     for u in v.list() {
-                        println!("   used at {}", u.with_timezone(&chrono::Local));
+                        println!("   {}", u.with_timezone(&chrono::Local));
                     }
                 }
             }
@@ -286,7 +286,14 @@ fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
         // get backup path
         let mut backup_path = PathBuf::new();
         backup_path.push(&path);
-        backup_path.set_extension("json.bak");
+        let backup_ext = backup_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + ".bak";
+        backup_path.set_extension(backup_ext);
 
         // make sure backup path is clear
         if backup_path.exists() {
