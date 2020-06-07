@@ -59,12 +59,10 @@ fn load_default_files() -> Result<UsageInformation> {
         ))?;
 
         return match is_json {
-            true => {
-                UsageInformation::load_usage_information_from_json_reader(file).context(format!(
-                    "could not load data from JSON file: {}",
-                    p.to_str().context(PATH_CONVERT_ERROR)?
-                ))
-            }
+            true => serde_json::from_reader(file).context(format!(
+                "could not parse JSON file: {}",
+                p.to_str().context(PATH_CONVERT_ERROR)?
+            )),
             false => UsageInformation::load_usage_information_from_ron_file(file).context(format!(
                 "could not load data from RON file: {}",
                 p.to_str().context(PATH_CONVERT_ERROR)?
