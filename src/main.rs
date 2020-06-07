@@ -19,6 +19,18 @@ struct Opt {
     /// The commands.
     #[structopt(subcommand)]
     cmd: Commands,
+    /// The data file to use.
+    ///
+    /// If the file doesn't exist, it will be treated as an empty file and if an object is added, it
+    /// will be saved at the location.
+    ///
+    /// Supported file formats:
+    /// - json
+    ///
+    /// Warning: even if RON support is added at some point, you won't be able to read files from
+    /// v0.1 with it, because those files have a different file format.
+    #[structopt(parse(from_os_str), verbatim_doc_comment)]
+    data_file: Option<PathBuf>,
     /// If a change is made, don't keep a backup of the original data file.
     #[structopt(long)]
     no_backup: bool,
@@ -119,7 +131,10 @@ fn main() -> Result<()> {
     let opt = Opt::from_args();
 
     // load data
-    let initial_info = load_from_default_files()?;
+    let initial_info = match &opt.data_file {
+        Some(df) => load_from_file(&df)?,
+        None => load_from_default_files()?,
+    };
     let mut info = initial_info.clone();
 
     // handle commands
@@ -176,7 +191,10 @@ fn main() -> Result<()> {
 
     // if data changed, safe new data
     if info != initial_info {
-        save_to_default_file(&info, !opt.no_backup)?;
+        match &opt.data_file {
+            Some(df) => save_to_file(&info, &df, !opt.no_backup)?,
+            None => save_to_default_file(&info, !opt.no_backup)?,
+        }
     }
 
     Ok(())
@@ -238,6 +256,44 @@ fn load_from_default_files() -> Result<UsageInformation> {
     Ok(UsageInformation::new())
 }
 
+/// Loads usage information from a file.
+///
+/// The file format is decided on basis of the file extension. Currently supported formats:
+/// - JSON: `.json`
+fn load_from_file(path: &PathBuf) -> Result<UsageInformation> {
+    let fmt = match path.extension() {
+        Some(e) => match e.to_str().context("Failed to parse file name extension")? {
+            "json" => "JSON",
+            _ => {
+                return Err(anyhow!(
+                    "\"{}\" is not a supported file format",
+                    e.to_str().context(PATH_CONVERT_ERROR)?
+                ))
+            }
+        },
+        None => return Err(anyhow!("file format not specified")),
+    };
+
+    if !path.exists() {
+        return Ok(UsageInformation::new());
+    }
+
+    let file = File::open(Path::new(&path)).context(format!(
+        "could not open file: {}",
+        path.to_str().context(PATH_CONVERT_ERROR)?
+    ))?;
+
+    match fmt {
+        "JSON" => serde_json::from_reader(file),
+        _ => panic!("internal format value changed"),
+    }
+    .context(format!(
+        "could not parse {} file: {}",
+        fmt,
+        path.to_str().context(PATH_CONVERT_ERROR)?
+    ))
+}
+
 /// Parses a &str into a DateTime<Utc>.
 ///
 /// Tries different formats described by the documentation for the `prune -v` command parameter.
@@ -282,6 +338,30 @@ fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
     path.push("usages");
     path.set_extension("json");
 
+    save_to_file(ui, &path, backup)
+}
+
+/// Saves the provided UsageInformation to a default file. The default file is the first file listed
+/// in the documentation of `load_from_default_files()`.
+///
+/// The parameter `backup` specifies whether or not the function will create a backup of the
+/// original file (if one exists), before overwriting it. This backup is very simple, it's literally
+/// adding `.bak` to the original files name. If a file with that name already exists, it is
+/// deleted.
+fn save_to_file(ui: &UsageInformation, path: &PathBuf, backup: bool) -> Result<()> {
+    let fmt = match path.extension() {
+        Some(e) => match e.to_str().context("Failed to parse file name extension")? {
+            "json" => "JSON",
+            _ => {
+                return Err(anyhow!(
+                    "\"{}\" is not a supported file format",
+                    e.to_str().context(PATH_CONVERT_ERROR)?
+                ))
+            }
+        },
+        None => return Err(anyhow!("file format not specified")),
+    };
+
     if backup {
         // get backup path
         let mut backup_path = PathBuf::new();
@@ -317,5 +397,13 @@ fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
         path.to_str().context(PATH_CONVERT_ERROR)?
     ))?;
 
-    serde_json::to_writer_pretty(file, ui).context("couldn't format data to json")
+    match fmt {
+        "JSON" => serde_json::to_writer_pretty(file, ui),
+        _ => panic!("internal format value changed"),
+    }
+    .context(format!(
+        "could not parse {} file: {}",
+        fmt,
+        path.to_str().context(PATH_CONVERT_ERROR)?
+    ))
 }
