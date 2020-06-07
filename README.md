@@ -22,6 +22,7 @@ $ usage-tracker add thing
 To get a list of tracked things:
 ```sh
 $ usage-tracker list
+$ usage-tracker list -v # more information
 ```
 
 To record a new usage of _thing_:
@@ -31,13 +32,13 @@ $ usage-tracker use thing
 
 To get an estimate on how much instances of _thing_ you need for a given time:
 ```sh
-$ usage-tracker need thing 1 y # 1 year
-$ usage-tracker need thing 1 M # 1 month
-$ usage-tracker need thing 1 d # 1 day
-$ usage-tracker need thing 1 h # 1 hour
-$ usage-tracker need thing 1 m # 1 minute
-$ usage-tracker need thing 1 s # 1 second
-$ usage-tracker need thing 1 w # 1 week
+$ usage-tracker usage thing 1 y # 1 year
+$ usage-tracker usage thing 1 M # 1 month
+$ usage-tracker usage thing 1 w # 1 week
+$ usage-tracker usage thing 1 d # 1 day
+$ usage-tracker usage thing 1 h # 1 hour
+$ usage-tracker usage thing 1 m # 1 minute
+$ usage-tracker usage thing 1 s # 1 second
 ```
 
 To stop tracking a _thing_:
