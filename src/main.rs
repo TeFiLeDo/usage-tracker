@@ -10,7 +10,9 @@ const PATH_CONVERT_ERROR: &str =
     "Failed to convert file name for other error message. WTF have you done?!";
 
 fn main() -> Result<()> {
-    let _ = load_default_files()?;
+    let info = load_default_files()?;
+
+    dbg!(info);
 
     Ok(())
 }
@@ -57,11 +59,13 @@ fn load_default_files() -> Result<UsageInformation> {
         ))?;
 
         return match is_json {
-            true => load_usage_information_from_json_reader(file).context(format!(
-                "could not load data from JSON file: {}",
-                p.to_str().context(PATH_CONVERT_ERROR)?
-            )),
-            false => load_usage_information_from_ron_file(file).context(format!(
+            true => {
+                UsageInformation::load_usage_information_from_json_reader(file).context(format!(
+                    "could not load data from JSON file: {}",
+                    p.to_str().context(PATH_CONVERT_ERROR)?
+                ))
+            }
+            false => UsageInformation::load_usage_information_from_ron_file(file).context(format!(
                 "could not load data from RON file: {}",
                 p.to_str().context(PATH_CONVERT_ERROR)?
             )),
