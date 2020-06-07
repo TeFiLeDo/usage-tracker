@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use human_panic::setup_panic;
 use standard_paths::{LocationType, StandardPaths};
 use std::{
@@ -68,6 +68,12 @@ enum Commands {
         name: String,
     },
 
+    /// Show all usages of a single object.
+    Show {
+        /// The name of the object.
+        name: String,
+    },
+
     /// Record a new usage of an object.
     Use {
         /// Add the object if it isn't tracked yet.
@@ -77,10 +83,26 @@ enum Commands {
         name: String,
     },
 
-    /// Show all usages of a single object.
-    Show {
-        /// The name of the object.
+    /// Show a prediction of the number of uses of an object within a time frame.
+    Usage {
+        /// The name of the object to predict for.
         name: String,
+
+        /// The duration to consider.
+        duration: i64,
+
+        ///The type of duration to consider
+        ///
+        /// Allowed values:
+        /// - y...year
+        /// - M...month
+        /// - w...week
+        /// - d...day
+        /// - h...hour
+        /// - m...minute
+        /// - s...second
+        #[structopt(verbatim_doc_comment)]
+        duration_type: char,
     },
 }
 
@@ -105,7 +127,7 @@ fn main() -> Result<()> {
         Commands::Add { name } => info.add(&name)?,
         Commands::Clear => info.clear(),
         Commands::List { verbose } => {
-            if info.list_verbose().len() ==  0 {
+            if info.list_verbose().len() == 0 {
                 return Err(anyhow!("No objects are currently tracked"));
             }
 
@@ -124,11 +146,31 @@ fn main() -> Result<()> {
         }
         Commands::Prune { before, name } => info.prune(&name, &before)?,
         Commands::Remove { name } => info.remove(&name),
-        Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
         Commands::Show { name } => {
             for u in (info.show(&name)?).list() {
                 println!("{}", u.with_timezone(&chrono::Local));
             }
+        }
+        Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
+        Commands::Usage {
+            name,
+            duration,
+            duration_type,
+        } => {
+            let d = match duration_type {
+                'y' => Duration::days(duration * 365),
+                'M' => Duration::days(duration * 30),
+                'w' => Duration::weeks(duration),
+                'd' => Duration::days(duration),
+                'h' => Duration::hours(duration),
+                'm' => Duration::minutes(duration),
+                's' => Duration::seconds(duration),
+                _ => {
+                    return Err(anyhow!("duration type '{}' doesn't exist", duration_type));
+                }
+            };
+
+            println!("{}", info.usage(&name, &d)?);
         }
     }
 

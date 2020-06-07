@@ -1,5 +1,6 @@
 mod usages;
 
+use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{btree_map::Entry::Occupied, BTreeMap};
 use thiserror::Error;
@@ -15,6 +16,10 @@ pub enum UsageTrackerError {
     /// Tried to add a new object to keep track of, but object with same name is already tracked.
     #[error("object \"{name}\" is already tracked")]
     ObjectAlreadyTracked { name: String },
+
+    /// Tried to predict the need of a never used object.
+    #[error("object \"{name}\" has never been used")]
+    ObjectNeverUsed { name: String },
 
     /// Tried to access an object that is not kept track of.
     #[error("object \"{name}\" doesn't exist")]
@@ -159,5 +164,35 @@ impl UsageInformation {
         }
 
         Ok(&self.usage_information[name])
+    }
+
+    /// Calculates the number of usages of the specified object within the specified amount of time.
+    ///
+    /// This works by calculating how much the specified time frame is in comparison to the time
+    /// since the oldest recorded usage. This relationship is the multiplied by the number of total
+    /// uses, to calculate a specific number.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::ObjectNeverUsed`
+    /// - `UsageTrackerError::ObjectNotTracked`
+    pub fn usage(&self, name: &String, time_frame: &Duration) -> Result<f64, UsageTrackerError> {
+        if !self.usage_information.contains_key(name) {
+            return Err(UsageTrackerError::ObjectNotTracked {
+                name: name.to_owned(),
+            });
+        }
+
+        let ui = &self.usage_information[name].list();
+        if ui.is_empty() {
+            return Err(UsageTrackerError::ObjectNeverUsed {
+                name: name.to_owned(),
+            });
+        }
+
+        let time_since_first_use = Utc::now() - ui[0];
+        let percentage_of_time_since_first_use =
+            time_frame.num_seconds() as f64 / time_since_first_use.num_seconds() as f64;
+
+        Ok(percentage_of_time_since_first_use * ui.len() as f64)
     }
 }
