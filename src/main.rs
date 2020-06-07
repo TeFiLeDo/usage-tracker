@@ -4,17 +4,50 @@ use std::{
     fs::{self, File},
     path::{Path, PathBuf},
 };
+use structopt::StructOpt;
 use usage_tracker::*;
 
 const PATH_CONVERT_ERROR: &str =
     "Failed to convert file name for other error message. WTF have you done?!";
 
-fn main() -> Result<()> {
-    let init_info = load_from_default_files()?;
-    let info = init_info.clone();
+/// The CLI.
+#[derive(Debug, StructOpt)]
+#[structopt(author, about)]
+struct Opt {
+    /// The commands.
+    #[structopt(subcommand)]
+    cmd: Commands,
+    /// If a change is made, don't keep a backup of the original data file.
+    #[structopt(long)]
+    no_backup: bool,
+}
 
-    if info != init_info {
-        save_to_default_file(&info, true)?;
+/// All possible commands.
+#[derive(Debug, StructOpt)]
+enum Commands {
+    /// Add a new object to keep track of.
+    Add {
+        /// The name of the new object.
+        name: String,
+    },
+}
+
+fn main() -> Result<()> {
+    // parge arguments
+    let opt = Opt::from_args();
+
+    // load data
+    let initial_info = load_from_default_files()?;
+    let mut info = initial_info.clone();
+
+    // handle commands
+    match opt.cmd {
+        Commands::Add { name } => info.add(name)?,
+    }
+
+    // if data changed, safe new data
+    if info != initial_info {
+        save_to_default_file(&info, !opt.no_backup)?;
     }
 
     Ok(())

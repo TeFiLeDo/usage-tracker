@@ -11,15 +11,27 @@ pub enum UsageTrackerError {
     /// The loading (most likely parsing) of a RON file failed. Contains the root cause.
     #[error("RON file could not be loaded")]
     FileLoadErrorRon(#[source] ron::Error),
+    /// Tried to add a new object to keep track of, but object with same name is already tracked.
+    #[error("object \"{name}\" is already tracked")]
+    ObjectAlreadyTracked { name: String },
 }
 
 /// A struct that keeps the records for all tracked objects.
-#[derive(Clone, Debug, Deserialize, Eq,PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct UsageInformation {
     usage_information: BTreeMap<String, Usages>,
 }
 
 impl UsageInformation {
+    pub fn add(&mut self, name: String) -> Result<(), UsageTrackerError> {
+        if self.usage_information.contains_key(&name) {
+            return Err(UsageTrackerError::ObjectAlreadyTracked { name: name });
+        }
+
+        self.usage_information.insert(name, Usages::new());
+        Ok(())
+    }
+
     /// Loads a UsageInformation object from a RON file.
     ///
     /// With v0.2, the data layout was changed. To make the transition from v0.1 easier for users,

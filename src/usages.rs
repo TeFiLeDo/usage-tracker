@@ -7,3 +7,10 @@ pub struct Usages {
     /// All recorded usages of something in UTC time.
     usages: Vec<DateTime<Utc>>,
 }
+
+impl Usages {
+    /// Creates a new, empty Usages object.
+    pub fn new() -> Self {
+        Self { usages: Vec::new() }
+    }
+}
