@@ -32,6 +32,12 @@ enum Commands {
         name: String,
     },
 
+    /// Remove a currently tracked object permanently.
+    Remove {
+        /// The name of the object to remove.
+        name: String,
+    },
+
     /// Record a new usage of an object.
     Use {
         /// Add the object if it isn't tracked yet.
@@ -61,6 +67,7 @@ fn main() -> Result<()> {
     // handle commands
     match opt.cmd {
         Commands::Add { name } => info.add(name)?,
+        Commands::Remove { name } => info.remove(name),
         Commands::Use { add_if_new, name } => info.record_use(name, add_if_new)?,
     }
 

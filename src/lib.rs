@@ -28,7 +28,7 @@ pub struct UsageInformation {
 }
 
 impl UsageInformation {
-    /// Add a new object to keep track of.
+    /// Adds a new object to keep track of.
     ///
     /// # Possible errors
     /// - `UsageTrackerError::ObjectAlreadyTracked`
@@ -74,7 +74,7 @@ impl UsageInformation {
         }
     }
 
-    /// Record a new usage of an object.
+    /// Records a new usage of an object.
     ///
     /// # Possible errors
     /// - `UsageTrackerError::ObjectNotTracked`
@@ -88,5 +88,12 @@ impl UsageInformation {
             .or_insert(Usages::new())
             .record_usage();
         Ok(())
+    }
+
+    /// Removes a currently tracked object permanently.
+    pub fn remove(&mut self, name: String) {
+        if self.usage_information.contains_key(&name) {
+            self.usage_information.remove(&name);
+        }
     }
 }
