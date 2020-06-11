@@ -10,7 +10,7 @@ license = "MIT"
 name = "usage-tracker"
 readme = "README.md"
 repository = "https://github.com/TeFiLeDo/usage-tracker"
-version = "0.3.0-alpha"
+version = "0.3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
