@@ -1,54 +1,53 @@
 # Usage Tracker ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust) ![GitHub](https://img.shields.io/github/license/TeFiLeDo/usage-tracker) ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
-A simple usage tracker in rust.
+A simple usage tracker CLI written in rust. Also provides JSON output and a rust
+library to easily access the data.
 
 ## What is this?
-This program allows you to keep track on your usage of _things_.
+`usage-tracker` is a simple program that allows you to keep track of your usage
+of _objects_.
 
-For example, if you want to keep track of how much milk you need, you'd tell the
-program to keep track of milk. Whenever you have emptied a can of milk, you tell
-it to record a new usage. Later you can see a list of all times when you emptied
-a can.
+For example, if you want to keep track of how much milk you drink, you'd tell
+the program to keep track of a new object that you call "milk". After that,
+whenever you've emptied a can of milk, you tell the program to record a new
+usage. Later you can access a list of all times when you emptied a can of milk.
 
-The program can also provide you with an estimate of how much milk you'll need
-for a certain amount of time. Please note that these estimates are only a rough
-guess and get better with the amount of data provided.
+`usage-tracker` also provides the functionality to calculate an estimate of how
+much cans of milk you'll need in a certain amount of time. Please note that
+these estimates are _estimates_. In most cases the accuracy will increase with
+the amount of data and the time since the usage first record.
 
 ## How to use?
-To start tracking a new _thing_:
+In this section you'll learn how to enact the example from the previous section.
+
+First of all, we need to tell `usage-tracker` to keep track of cans of milk:
 ```sh
-$ usage-tracker add thing
+$ usage-tracker add milk
 ```
 
-To get a list of tracked things:
+Now we want to tell the program that we've emptied a can of milk:
 ```sh
-$ usage-tracker list
-$ usage-tracker list -v # more information
+$ usage-tracker use milk
 ```
 
-To record a new usage of _thing_:
+After that, we want to see a list of all times we've emptied a can of milk:
 ```sh
-$ usage-tracker use thing
+$ usage-tracker show milk
 ```
 
-To get an estimate on how much instances of _thing_ you need for a given time:
+Finally, we want to stop keeping track of milk:
 ```sh
-$ usage-tracker usage thing 1 y # 1 year
-$ usage-tracker usage thing 1 M # 1 month
-$ usage-tracker usage thing 1 w # 1 week
-$ usage-tracker usage thing 1 d # 1 day
-$ usage-tracker usage thing 1 h # 1 hour
-$ usage-tracker usage thing 1 m # 1 minute
-$ usage-tracker usage thing 1 s # 1 second
+$ usage-tracker remove milk
 ```
 
-To stop tracking a _thing_:
+### Command reference
+For further information, you can use the integrated help of the CLI:
 ```sh
-$ usage-tracker remove thing
-```
+$ usage-tracker help
+$ usage-tracker -h
+  # These commands will provide you with a brief help message.
 
-To stop tracking all things:
-```sh
-$ usage-tracker clear
+$ usage-tracker --help
+  # This command will provide you with a longer, more detailed help message.
 ```
 
 ## How to install?
@@ -69,8 +68,8 @@ for users simple. Otherwise they would be required to specify when the usage
 starts, which would be a worse user experience.
 
 ## How to build from source?
-You will need to set up a rust development environment. After that, clone the
-repository. Go into the root folder of the repository and run this:
+You will need to set up a rust development environment. After that, clone or
+download the repository. Go into its root folder and run this command:
 ```sh
 $ cargo build
 ```
