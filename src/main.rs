@@ -50,6 +50,9 @@ enum Commands {
     /// Remove **all** objects permanently.
     Clear {
         /// REQUIRED: confirm you are sure to clear the data store.
+        ///
+        /// This is an additional check to ensure users don't accidentally delete all of their usage
+        /// records.
         #[structopt(long = "i-am-sure")]
         confirmation: bool,
     },
@@ -76,7 +79,7 @@ enum Commands {
         ///                                value. Intended for use by other programs.
         #[structopt(short, long, parse(try_from_str = parse_date), verbatim_doc_comment)]
         before: Option<DateTime<Utc>>,
-        /// The name of the object to modify.
+        /// The name of the object to prune.
         name: String,
     },
 
@@ -92,16 +95,14 @@ enum Commands {
         name: String,
     },
 
-    /// Record a new usage of an object.
-    Use {
-        /// Add the object if it isn't tracked yet.
-        #[structopt(long)]
-        add_if_new: bool,
-        /// The name of the object that was used.
-        name: String,
-    },
-
     /// Show a prediction of the number of uses of an object within a time frame.
+    ///
+    /// Please note that these predictions are estimates. In most cases the accuracy will increase
+    /// with the amount of data and the time since the usage first record.
+    ///
+    /// In some cases, when the usage behavior change drastically, it might be useful to delete all
+    /// records before specific date to increase accuracy. You can use the `prune` command to do
+    /// this.
     Usage {
         /// The name of the object to predict for.
         name: String,
@@ -121,6 +122,15 @@ enum Commands {
         /// - s...second
         #[structopt(verbatim_doc_comment)]
         duration_type: char,
+    },
+
+    /// Record a new usage of an object.
+    Use {
+        /// Add the object if it isn't tracked yet.
+        #[structopt(long = "add")]
+        add_if_new: bool,
+        /// The name of the object that was used.
+        name: String,
     },
 }
 
@@ -208,7 +218,6 @@ fn main() -> Result<()> {
                 );
             }
         }
-        Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
         Commands::Usage {
             name,
             duration,
@@ -234,6 +243,7 @@ fn main() -> Result<()> {
                 println!("{}", serde_json::json!({ "value": data }));
             }
         }
+        Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
     }
 
     // if data changed, safe new data
