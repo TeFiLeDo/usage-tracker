@@ -1,4 +1,12 @@
-# Usage Tracker ![Crates.io](https://img.shields.io/crates/v/usage-tracker) ![Crates.io](https://img.shields.io/crates/l/usage-tracker) [![Docs](https://img.shields.io/badge/Read%20the-docs-blue)](https://docs.rs/usage-tracker) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust) ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
+<h1>
+    Usage Tracker
+    [![Crates.io](https://img.shields.io/crates/v/usage-tracker)](https://crates.io/crates/usage-tracker)
+    [![Crates.io](https://img.shields.io/crates/l/usage-tracker)](https://github.com/TeFiLeDo/usage-tracker/blob/master/LICENSE)
+    [![Docs](https://img.shields.io/badge/Read%20the-docs-blue)](https://docs.rs/usage-tracker)
+    ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TeFiLeDo/usage-tracker/Rust)
+    ![GitHub last commit](https://img.shields.io/github/last-commit/TeFiLeDo/usage-tracker)
+</h1>
+
 A simple usage tracker CLI written in rust. Also provides JSON output and a rust
 library to easily access the data.
 
