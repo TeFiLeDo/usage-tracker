@@ -48,7 +48,11 @@ enum Commands {
     },
 
     /// Remove **all** objects permanently.
-    Clear,
+    Clear {
+        /// REQUIRED: confirm you are sure to clear the data store.
+        #[structopt(long = "i-am-sure")]
+        confirmation: bool,
+    },
 
     /// List all currently tracked objects.
     List {
@@ -142,7 +146,13 @@ fn main() -> Result<()> {
     // handle commands
     match opt.cmd {
         Commands::Add { name } => info.add(&name)?,
-        Commands::Clear => info.clear(),
+        Commands::Clear { confirmation } => {
+            if confirmation {
+                info.clear()
+            } else {
+                return Err(anyhow!("please confirm operation with `--i-am-sure`"));
+            }
+        }
         Commands::List { verbose } => {
             if info.list_verbose().len() == 0 {
                 return Err(anyhow!("no objects are currently tracked"));
@@ -221,7 +231,7 @@ fn main() -> Result<()> {
             if atty::is(Stream::Stdout) {
                 println!("{}", data);
             } else {
-                println!("{}", serde_json::json!({"value": data}));
+                println!("{}", serde_json::json!({ "value": data }));
             }
         }
     }
