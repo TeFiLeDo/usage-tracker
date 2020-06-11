@@ -1,10 +1,27 @@
+//! `usage_tracker` is a library that allows you to easily keep track of usages of something.
+//!
+//! In addition to the library, there also is a CLI.
+//!
+//! # Design
+//! The library mainly consists of the `UsageInformation` struct. `UsageInformation` internally uses
+//! `Usages` to keep track of individual objects. Both provide methods to interact with the stored
+//! data.
+//!
+//! You can use serde to serialize and deserialize `UsageInformation` and `Usages` instances.
+//!
+//! All methods of `UsageInformation`, that can fail, (`Usages` has no such methods) use
+//! `UsageTrackerError` as error type. The documentation of those methods lists all possible errors
+//! that can occur within that method.
+//!
+//! As far as I can tell, the library should not panic no matter what input you provide.
+
 mod usages;
 
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{btree_map::Entry::Occupied, BTreeMap};
 use thiserror::Error;
-use usages::Usages;
+pub use usages::Usages;
 
 /// All errors the library's public interface can return.
 #[derive(Error, Debug)]
