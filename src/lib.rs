@@ -152,20 +152,6 @@ impl UsageInformation {
         }
     }
 
-    /// Provides the usages for a specific object.
-    ///
-    /// # Possible errors
-    /// - `UsageTrackerError::ObjectNotTracked`
-    pub fn show(&self, name: &String) -> Result<&Usages, UsageTrackerError> {
-        if !self.usage_information.contains_key(name) {
-            return Err(UsageTrackerError::ObjectNotTracked {
-                name: name.to_owned(),
-            });
-        }
-
-        Ok(&self.usage_information[name])
-    }
-
     /// Calculates the number of usages of the specified object within the specified amount of time.
     ///
     /// This works by calculating how much the specified time frame is in comparison to the time
@@ -194,5 +180,19 @@ impl UsageInformation {
             time_frame.num_seconds() as f64 / time_since_first_use.num_seconds() as f64;
 
         Ok(percentage_of_time_since_first_use * ui.len() as f64)
+    }
+
+    /// Provides the usages for a specific object.
+    ///
+    /// # Possible errors
+    /// - `UsageTrackerError::ObjectNotTracked`
+    pub fn usages(&self, name: &String) -> Result<&Usages, UsageTrackerError> {
+        if !self.usage_information.contains_key(name) {
+            return Err(UsageTrackerError::ObjectNotTracked {
+                name: name.to_owned(),
+            });
+        }
+
+        Ok(&self.usage_information[name])
     }
 }

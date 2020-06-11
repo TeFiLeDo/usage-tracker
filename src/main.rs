@@ -186,8 +186,16 @@ fn main() -> Result<()> {
         Commands::Prune { before, name } => info.prune(&name, &before)?,
         Commands::Remove { name } => info.remove(&name),
         Commands::Show { name } => {
-            for u in (info.show(&name)?).list() {
-                println!("{}", u.with_timezone(&chrono::Local));
+            let data = (info.usages(&name)?).list();
+            if atty::is(Stream::Stdout) {
+                for u in data {
+                    println!("{}", u.with_timezone(&chrono::Local));
+                }
+            } else {
+                println!(
+                    "{}",
+                    serde_json::to_string(&data).context(JSON_FORMAT_ERROR)?
+                );
             }
         }
         Commands::Use { add_if_new, name } => info.record_use(&name, add_if_new)?,
@@ -209,7 +217,12 @@ fn main() -> Result<()> {
                 }
             };
 
-            println!("{}", info.usage(&name, &d)?);
+            let data = info.usage(&name, &d)?;
+            if atty::is(Stream::Stdout) {
+                println!("{}", data);
+            } else {
+                println!("{}", serde_json::json!({"value": data}));
+            }
         }
     }
 
