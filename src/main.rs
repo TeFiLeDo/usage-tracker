@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use atty::Stream;
 use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use human_panic::setup_panic;
 use standard_paths::{LocationType, StandardPaths};
@@ -10,7 +11,8 @@ use structopt::StructOpt;
 use usage_tracker::*;
 
 const PATH_CONVERT_ERROR: &str =
-    "Failed to convert file name for other error message. WTF have you done?!";
+    "could not convert file name for other error message. WTF have you done?!";
+const JSON_FORMAT_ERROR: &str = "could not serialize JSON output";
 
 /// The CLI.
 #[derive(Debug, StructOpt)]
@@ -143,19 +145,41 @@ fn main() -> Result<()> {
         Commands::Clear => info.clear(),
         Commands::List { verbose } => {
             if info.list_verbose().len() == 0 {
-                return Err(anyhow!("No objects are currently tracked"));
+                return Err(anyhow!("no objects are currently tracked"));
             }
 
             if !verbose {
-                for (i, k) in info.list().iter().enumerate() {
-                    println!("{}: {}", i, k);
+                let data = info.list();
+
+                if atty::is(Stream::Stdout) {
+                    for (i, k) in data.iter().enumerate() {
+                        println!("{}: {}", i, k);
+                    }
+                } else {
+                    println!(
+                        "{}",
+                        serde_json::to_string(&data).context(JSON_FORMAT_ERROR)?
+                    );
                 }
             } else {
-                for (i, (k, v)) in info.list_verbose().iter().enumerate() {
-                    println!("{}: {}", i, k);
-                    for u in v.list() {
-                        println!("   {}", u.with_timezone(&chrono::Local));
+                let data = info.list_verbose();
+
+                if atty::is(Stream::Stdout) {
+                    for (i, (k, v)) in data.iter().enumerate() {
+                        println!("{}: {}", i, k);
+                        for u in v.list() {
+                            println!("   {}", u.with_timezone(&chrono::Local));
+                        }
                     }
+                } else {
+                    let mut output = Vec::new();
+                    for (k, v) in data.iter() {
+                        output.push(serde_json::json!({"name": k, "usages": v.list()}));
+                    }
+                    println!(
+                        "{}",
+                        serde_json::to_string(&output).context(JSON_FORMAT_ERROR)?
+                    );
                 }
             }
         }
@@ -262,7 +286,7 @@ fn load_from_default_files() -> Result<UsageInformation> {
 /// - JSON: `.json`
 fn load_from_file(path: &PathBuf) -> Result<UsageInformation> {
     let fmt = match path.extension() {
-        Some(e) => match e.to_str().context("Failed to parse file name extension")? {
+        Some(e) => match e.to_str().context("could not parse file name extension")? {
             "json" => "JSON",
             _ => {
                 return Err(anyhow!(
@@ -304,7 +328,7 @@ fn parse_date(src: &str) -> Result<DateTime<Utc>, Box<dyn std::error::Error>> {
         return Ok(Utc
             .from_local_datetime(
                 &d.and_hms_opt(0, 0, 0)
-                    .ok_or(anyhow!("failed to convert to utc: {}", d))?,
+                    .ok_or(anyhow!("could not convert to utc: {}", d))?,
             )
             .unwrap());
     } else if src.len() == "yyyy-MM-ddThh:mm:ss".len() {
@@ -350,7 +374,7 @@ fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
 /// deleted.
 fn save_to_file(ui: &UsageInformation, path: &PathBuf, backup: bool) -> Result<()> {
     let fmt = match path.extension() {
-        Some(e) => match e.to_str().context("Failed to parse file name extension")? {
+        Some(e) => match e.to_str().context("could not parse file name extension")? {
             "json" => "JSON",
             _ => {
                 return Err(anyhow!(
