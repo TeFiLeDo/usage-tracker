@@ -16,7 +16,7 @@ const JSON_FORMAT_ERROR: &str = "could not serialize JSON output";
 
 /// The CLI.
 #[derive(Debug, StructOpt)]
-#[structopt(author, about)]
+#[structopt(author)]
 struct Opt {
     /// The commands.
     #[structopt(subcommand)]
@@ -40,6 +40,7 @@ struct Opt {
 
 /// All possible commands.
 #[derive(Debug, StructOpt)]
+#[structopt(about)]
 enum Commands {
     /// Add a new object to keep track of.
     Add {
