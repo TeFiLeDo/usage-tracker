@@ -1,13 +1,13 @@
 use anyhow::{anyhow, Context, Result};
 use atty::Stream;
-use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use clap::Parser;
 use human_panic::setup_panic;
 use standard_paths::{LocationType, StandardPaths};
 use std::{
     fs::{self, File},
     path::{Path, PathBuf},
 };
-use structopt::StructOpt;
 use usage_tracker::*;
 
 const PATH_CONVERT_ERROR: &str =
@@ -15,31 +15,31 @@ const PATH_CONVERT_ERROR: &str =
 const JSON_FORMAT_ERROR: &str = "could not serialize JSON output";
 
 /// The CLI.
-#[derive(Debug, StructOpt)]
-#[structopt(author)]
+#[derive(Debug, Parser)]
+#[clap(about, author, version)]
 struct Opt {
     /// The commands.
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     cmd: Commands,
     /// The data file to use.
     ///
-    /// If the file doesn't exist, it will be treated as an empty file and if an object is added, it
-    /// will be saved at the location.
+    /// If the file doesn't exist, it will be treated as an empty file and if an object is
+    /// added, it will be saved at the location.
     ///
     /// Supported file formats:
     /// - json
     ///
-    /// Warning: even if RON support is added at some point, you won't be able to read files from
-    /// v0.1 with it, because those files have a different file format.
-    #[structopt(parse(from_os_str), verbatim_doc_comment)]
+    /// Warning: even if RON support is added at some point, you won't be able to read files
+    /// from v0.1 with it, because those files have a different file format.
+    #[clap(parse(from_os_str), verbatim_doc_comment)]
     data_file: Option<PathBuf>,
     /// If a change is made, don't keep a backup of the original data file.
-    #[structopt(long)]
+    #[clap(long)]
     no_backup: bool,
 }
 
 /// All possible commands.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(about)]
 enum Commands {
     /// Add a new object to keep track of.
@@ -54,14 +54,14 @@ enum Commands {
         ///
         /// This is an additional check to ensure users don't accidentally delete all of their usage
         /// records.
-        #[structopt(long = "i-am-sure")]
+        #[clap(long = "i-am-sure")]
         confirmation: bool,
     },
 
     /// List all currently tracked objects.
     List {
         /// Print all usage dates in addition to the objects names.
-        #[structopt(long, short)]
+        #[clap(long, short)]
         verbose: bool,
     },
 
@@ -78,7 +78,7 @@ enum Commands {
         /// - 'yyyy-MM-ddThh:mm:ss+oh:om': this format allows you to specify the timezone yourself.
         ///                                `oh` is the offset hour value, 'om' the offset minute
         ///                                value. Intended for use by other programs.
-        #[structopt(short, long, parse(try_from_str = parse_date), verbatim_doc_comment)]
+        #[clap(short, long, parse(try_from_str = parse_date), verbatim_doc_comment)]
         before: Option<DateTime<Utc>>,
         /// The name of the object to prune.
         name: String,
@@ -121,14 +121,14 @@ enum Commands {
         /// - h...hour
         /// - m...minute
         /// - s...second
-        #[structopt(verbatim_doc_comment)]
+        #[clap(verbatim_doc_comment)]
         duration_type: char,
     },
 
     /// Record a new usage of an object.
     Use {
         /// Add the object if it isn't tracked yet.
-        #[structopt(long = "add")]
+        #[clap(long = "add")]
         add_if_new: bool,
         /// The name of the object that was used.
         name: String,
@@ -144,13 +144,14 @@ fn main() -> Result<()> {
         version: env!("CARGO_PKG_VERSION").into(),
     });
 
-    // parge arguments
-    let opt = Opt::from_args();
+    // parse arguments
+    let opt = Opt::parse();
 
     // load data
+    let sp = StandardPaths::new("usage-tracker", "tfld");
     let initial_info = match &opt.data_file {
         Some(df) => load_from_file(&df)?,
-        None => load_from_default_files()?,
+        None => load_from_default_files(&sp)?,
     };
     let mut info = initial_info.clone();
 
@@ -189,7 +190,7 @@ fn main() -> Result<()> {
                     for (i, (k, v)) in data.iter().enumerate() {
                         println!("{}: {}", i, k);
                         for u in v.list() {
-                            println!("   {}", u.with_timezone(&chrono::Local));
+                            println!("   {}", u.with_timezone(&Local));
                         }
                     }
                 } else {
@@ -210,7 +211,7 @@ fn main() -> Result<()> {
             let data = (info.usages(&name)?).list();
             if atty::is(Stream::Stdout) {
                 for u in data {
-                    println!("{}", u.with_timezone(&chrono::Local));
+                    println!("{}", u.with_timezone(&Local));
                 }
             } else {
                 println!(
@@ -251,7 +252,7 @@ fn main() -> Result<()> {
     if info != initial_info {
         match &opt.data_file {
             Some(df) => save_to_file(&info, &df, !opt.no_backup)?,
-            None => save_to_default_file(&info, !opt.no_backup)?,
+            None => save_to_default_file(&info, !opt.no_backup, &sp)?,
         }
     }
 
@@ -265,9 +266,8 @@ fn main() -> Result<()> {
 /// application data directory:
 /// 1. `usages.json`: this is also the file the program writes to by default.
 /// 2. `default.ron`: this was the default file in 0.1, so 0.2 should be able to fall back to it.
-fn load_from_default_files() -> Result<UsageInformation> {
+fn load_from_default_files(sp: &StandardPaths) -> Result<UsageInformation> {
     // get application data directory
-    let sp = StandardPaths::new();
     let path_base = sp
         .writable_location(LocationType::AppDataLocation)
         .context("application data directory not found")?;
@@ -304,6 +304,7 @@ fn load_from_default_files() -> Result<UsageInformation> {
                 "could not parse JSON file: {}",
                 p.to_str().context(PATH_CONVERT_ERROR)?
             )),
+            #[allow(deprecated)]
             false => UsageInformation::load_usage_information_from_ron_file(file).context(format!(
                 "could not load data from RON file: {}",
                 p.to_str().context(PATH_CONVERT_ERROR)?
@@ -355,7 +356,7 @@ fn load_from_file(path: &PathBuf) -> Result<UsageInformation> {
 /// Parses a &str into a DateTime<Utc>.
 ///
 /// Tries different formats described by the documentation for the `prune -v` command parameter.
-fn parse_date(src: &str) -> Result<DateTime<Utc>, Box<dyn std::error::Error>> {
+fn parse_date(src: &str) -> Result<DateTime<Utc>> {
     if src.len() == "dd.MM.yyyy".len() {
         let d = NaiveDate::parse_from_str(src, "%d.%m.%Y")
             .context(format!("could not parse local date: {}", src))?;
@@ -370,7 +371,7 @@ fn parse_date(src: &str) -> Result<DateTime<Utc>, Box<dyn std::error::Error>> {
             .parse()
             .context(format!("could not pares local datetime: {}", src))?;
 
-        let dtu = chrono::Local.from_local_datetime(&dt).unwrap();
+        let dtu = Local.from_local_datetime(&dt).unwrap();
 
         return Ok(dtu.into());
     } else {
@@ -387,9 +388,8 @@ fn parse_date(src: &str) -> Result<DateTime<Utc>, Box<dyn std::error::Error>> {
 /// original file (if one exists), before overwriting it. This backup is very simple, it's literally
 /// adding `.bak` to the original files name. If a file with that name already exists, it is
 /// deleted.
-fn save_to_default_file(ui: &UsageInformation, backup: bool) -> Result<()> {
+fn save_to_default_file(ui: &UsageInformation, backup: bool, sp: &StandardPaths) -> Result<()> {
     // get file path
-    let sp = StandardPaths::new();
     let mut path = sp
         .writable_location(LocationType::AppDataLocation)
         .context("application data directory not found")?;
